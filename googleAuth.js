@@ -1,4 +1,3 @@
-// googleAuth.js (improved, safe, dev-friendly)
 const fs = require("fs");
 const path = require("path");
 const { google } = require("googleapis");
@@ -9,71 +8,55 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-const CREDENTIALS_PATH = path.join(__dirname, "credentials.json");
 const TOKEN_PATH = path.join(__dirname, "tokens.json");
 
 let oAuth2Client = null;
 
-// load client credentials and tokens (safe)
+// Load OAuth client using ENV variables
 function loadClient() {
   if (oAuth2Client) return oAuth2Client;
 
-  if (!fs.existsSync(CREDENTIALS_PATH)) {
-    throw new Error(
-      `Missing credentials.json at ${CREDENTIALS_PATH}. Create credentials in Google Cloud Console and save file there.`
-    );
+  const client_id = process.env.GOOGLE_CLIENT_ID;
+  const client_secret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirect_uri = process.env.GOOGLE_REDIRECT_URI;
+
+  if (!client_id || !client_secret || !redirect_uri) {
+    throw new Error("Missing Google OAuth environment variables.");
   }
 
-  let credentials;
-  try {
-    credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"));
-  } catch (err) {
-    throw new Error(`Invalid credentials.json: ${err.message}`);
-  }
+  oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uri);
 
-  const { client_secret, client_id, redirect_uris } = credentials.web || {};
-  if (!client_id || !client_secret || !redirect_uris || !redirect_uris[0]) {
-    throw new Error(
-      "credentials.json is missing required fields (client_id/secret/redirect_uris)."
-    );
-  }
-
-  oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
-  );
-
-  // load token if present
+  // Load token if exists
   if (fs.existsSync(TOKEN_PATH)) {
     try {
       const token = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf8"));
       oAuth2Client.setCredentials(token);
     } catch (err) {
-      console.warn("Warning: failed to parse tokens.json -", err.message);
-      // do not throw — allow authorize() to create new tokens
+      console.warn("Failed to parse tokens.json:", err.message);
     }
   }
 
-  // persist refresh token when google client emits tokens
+  // Save refreshed tokens automatically
   oAuth2Client.on("tokens", (tokens) => {
     try {
       const existing = fs.existsSync(TOKEN_PATH)
         ? JSON.parse(fs.readFileSync(TOKEN_PATH, "utf8"))
         : {};
-      const merged = Object.assign({}, existing, tokens);
+      const merged = { ...existing, ...tokens };
       fs.writeFileSync(TOKEN_PATH, JSON.stringify(merged, null, 2));
-      console.log("♻️ Tokens updated and saved to", TOKEN_PATH);
+      console.log("Tokens saved.");
     } catch (err) {
-      console.error("Failed to save token:", err.message);
+      console.error("Failed saving token:", err.message);
     }
   });
 
   return oAuth2Client;
 }
 
+// Generate Google login URL
 function getAuthUrl() {
   const client = loadClient();
+
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -81,62 +64,51 @@ function getAuthUrl() {
   });
 }
 
+// Exchange code for tokens
 async function authorize(code) {
   const client = loadClient();
-  if (!code) throw new Error("Missing authorization code.");
+
+  if (!code) throw new Error("Missing authorization code");
+
   const { tokens } = await client.getToken(code);
   client.setCredentials(tokens);
+
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
-  console.log("✅ Tokens saved successfully!");
+
+  console.log("OAuth authorized successfully");
   return tokens;
 }
 
-function toRFC3339WithLocalOffset(dateInput) {
-  // Accept Date object or parseable date string
-  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
-  // timezone offset in minutes (e.g., IST is -330)
-  const tzOffsetMin = d.getTimezoneOffset();
-  const absOffsetMin = Math.abs(tzOffsetMin);
-  const hours = String(Math.floor(absOffsetMin / 60)).padStart(2, "0");
-  const minutes = String(absOffsetMin % 60).padStart(2, "0");
-  const sign = tzOffsetMin > 0 ? "-" : "+";
-  // build YYYY-MM-DDTHH:mm:ss
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  const sec = String(d.getSeconds()).padStart(2, "0");
-
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${sec}${sign}${hours}:${minutes}`;
+// Convert date to RFC3339 format
+function toRFC3339(dateInput) {
+  const d = new Date(dateInput);
+  return d.toISOString();
 }
 
+// Create Google Meet link
 async function createGoogleMeet(title, description, startTime, endTime) {
   const client = loadClient();
 
-  // ensure we have at least some credentials
   if (
     !client.credentials ||
     (!client.credentials.access_token && !client.credentials.refresh_token)
   ) {
-    throw new Error(
-      "No OAuth token available. Please visit /auth/google and complete the OAuth flow to authorize the app."
-    );
+    throw new Error("Please authorize Google first by visiting /auth/google");
   }
 
   const calendar = google.calendar({ version: "v3", auth: client });
 
-  // convert incoming times to RFC3339/ISO style with offset
-  // startTime and endTime may come in as local strings from <input type="datetime-local">
-  // Use helper to format with local timezone offset (e.g. +05:30)
-  const startRFC = toRFC3339WithLocalOffset(startTime);
-  const endRFC = toRFC3339WithLocalOffset(endTime);
-
   const event = {
     summary: title || "TutorConnect Session",
     description: description || "TutorConnect tutoring session",
-    start: { dateTime: startRFC, timeZone: "Asia/Kolkata" },
-    end: { dateTime: endRFC, timeZone: "Asia/Kolkata" },
+    start: {
+      dateTime: toRFC3339(startTime),
+      timeZone: "Asia/Kolkata",
+    },
+    end: {
+      dateTime: toRFC3339(endTime),
+      timeZone: "Asia/Kolkata",
+    },
     conferenceData: {
       createRequest: {
         requestId: `meet-${Date.now()}`,
@@ -145,12 +117,6 @@ async function createGoogleMeet(title, description, startTime, endTime) {
     },
   };
 
-  // DEBUG: show event payload being sent to Google (helpful for 400 errors)
-  console.log(
-    "📅 Creating Google Meet with event data:",
-    JSON.stringify(event, null, 2)
-  );
-
   try {
     const response = await calendar.events.insert({
       calendarId: "primary",
@@ -158,35 +124,21 @@ async function createGoogleMeet(title, description, startTime, endTime) {
       conferenceDataVersion: 1,
     });
 
-    // try to find a URI in entryPoints (robust)
-    const entryPoints = response.data.conferenceData?.entryPoints || [];
-    let meetLink = null;
-    if (Array.isArray(entryPoints) && entryPoints.length) {
-      const candidate = entryPoints.find(
-        (ep) => ep.entryPointType === "video" || ep.entryPointType === "more"
-      );
-      meetLink = candidate?.uri || entryPoints[0]?.uri;
-    }
+    const meetLink =
+      response.data.hangoutLink ||
+      response.data.conferenceData?.entryPoints?.[0]?.uri;
 
-    // fallback to hangoutLink or conferenceSolution name
-    if (!meetLink) {
-      meetLink =
-        response.data.hangoutLink ||
-        response.data.conferenceData?.conferenceSolution?.name ||
-        null;
-    }
+    console.log("Google Meet created:", meetLink);
 
-    console.log("✅ Google Meet Created:", meetLink);
     return meetLink;
   } catch (err) {
-    // include Google response body if available to aid debugging
-    const googleErr = err.response?.data || err.message || err;
-    console.error("❌ Google Meet creation failed:", googleErr);
-    // rethrow an Error with the more helpful message
-    throw new Error(
-      typeof googleErr === "string" ? googleErr : JSON.stringify(googleErr)
-    );
+    console.error("Google Meet creation failed:", err.response?.data || err);
+    throw err;
   }
 }
 
-module.exports = { getAuthUrl, authorize, createGoogleMeet };
+module.exports = {
+  getAuthUrl,
+  authorize,
+  createGoogleMeet,
+};

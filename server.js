@@ -53,14 +53,24 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Step 1: Redirect tutor to Google authorization
 app.get("/auth/google", (req, res) => {
-  res.redirect(getAuthUrl());
+  const { getAuthUrl } = require("./googleAuth");
+  const url = getAuthUrl();
+  res.redirect(url);
 });
 
 // Step 2: Handle callback (after Google login)
 app.get("/oauth2callback", async (req, res) => {
-  const code = req.query.code;
-  await authorize(code);
-  res.send(" Google OAuth connected! You can now create meetings.");
+  const { authorize } = require("./googleAuth");
+
+  try {
+    const code = req.query.code;
+    await authorize(code);
+
+    res.send("Google authorization successful. You can close this.");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("OAuth failed");
+  }
 });
 
 // Session scheduling by tutor
