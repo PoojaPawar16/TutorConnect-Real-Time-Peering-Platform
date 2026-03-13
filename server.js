@@ -32,23 +32,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+app.set("trust proxy", 1);
+
 app.use(
   session({
-    secret: "your-secret-key",
+    secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 },
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60,
+    },
   }),
 );
 
-// app.use(express.static(path.join(__dirname, "public")));
-app.use("/tutorconnect", express.static(path.join(__dirname, "public")));
-app.get("/", (req, res) => {
-  res.redirect("/tutorconnect");
-});
-app.get("/tutorconnect", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.use(express.static(path.join(__dirname, "public")));
+// app.use("/tutorconnect", express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Step 1: Redirect tutor to Google authorization
