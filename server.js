@@ -10,7 +10,8 @@ const { log, error } = require("console");
 const { getAuthUrl, authorize, createGoogleMeet } = require("./googleAuth");
 
 const app = express();
-const PORT = 3000;
+// const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // console.log(process.env.OPENROUTER_API_KEY);
 
@@ -42,11 +43,13 @@ app.use(
 
 // app.use(express.static(path.join(__dirname, "public")));
 app.use("/tutorconnect", express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.get("/", (req, res) => {
+  res.redirect("/tutorconnect");
+});
 app.get("/tutorconnect", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Step 1: Redirect tutor to Google authorization
 app.get("/auth/google", (req, res) => {
