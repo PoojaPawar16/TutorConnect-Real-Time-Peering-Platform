@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Find Tutors - TutorConnect</title>
+    <link rel="stylesheet" href="find_tutors.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2 class="logo">TutorConnect</h2>
+      <nav>
+        <!-- <a href="learner_dashboard.html">Dashboard</a> -->
+        <a href="#" class="active">Find Tutors</a>
+        <a href="learner_profile.html">Profile</a>
+        <a href="learner_sessions.html">Sessions</a>
+        <a href="learner_doubt_request.html">Request Doubt</a>
+        <a href="learner_group.html">Groups</a>
+        <a href="learner_quizzes.html">Quizzes</a>
+        <a href="ai_test.html">Chat</a>
+        <a href="learner_logout.html" id="logoutBtn">Logout</a>
+      </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1>📚 Find Tutors</h1>
+          <p class="muted">
+            Browse approved tutors and request one for your subject.
+          </p>
+        </div>
+      </header>
+
+      <!-- Tutor controls + grid (controls are injected by JS) -->
+      <section id="tutorList" class="grid">
+        <p>Loading tutors...</p>
+      </section>
+    </main>
+
+    <!-- Request Modal (used for both request and quick view) -->
+    <div id="requestModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h3 id="modalTitle">Request Tutor</h3>
+        <form id="requestForm">
+          <input type="hidden" id="modalTutorId" />
+          <label for="subject">Subject</label>
+          <input
+            type="text"
+            id="subject"
+            placeholder="Enter subject"
+            required
+          />
+
+          <label for="message">Message (optional)</label>
+          <textarea
+            id="message"
+            rows="4"
+            placeholder="Write a short note for admin or tutor..."
+          ></textarea>
+
+          <div class="form-actions">
+            <button type="submit" class="btn">Send Request</button>
+            <button type="button" class="btn ghost" id="cancelModal">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- interactive script -->
+    <script src="find_tutors.js" defer></script>
+  </body>
+</html>

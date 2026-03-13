@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Upcoming Sessions | TutorConnect</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f4f6fb;
+        display: flex;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 230px;
+        background: #0f3057;
+        height: 100vh;
+        color: white;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: white;
+        transition: 0.3s;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #1f5fa6;
+        border-radius: 6px;
+      }
+
+      /* Main Content */
+      .main {
+        margin-left: 230px;
+        padding: 40px;
+        width: 100%;
+      }
+
+      h1 {
+        text-align: center;
+        color: #2563eb;
+        margin-bottom: 10px;
+      }
+
+      .subtext {
+        text-align: center;
+        color: #555;
+        margin-bottom: 30px;
+      }
+
+      .search-box {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .search-box input {
+        width: 50%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+
+      .session-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+      }
+
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .card h3 {
+        color: #2563eb;
+        margin-bottom: 10px;
+      }
+
+      .card p {
+        margin: 5px 0;
+        color: #444;
+        font-size: 14px;
+      }
+
+      .join-btn {
+        margin-top: 15px;
+        padding: 8px 15px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .join-btn:hover {
+        background: #1e4bb8;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="courses.html">Find Tutors</a>
+      <a href="learner_group.html">My Groups</a>
+      <a href="learner_sessions.html" class="active">Sessions</a>
+      <a href="learner_quizzes.html">Quizzes</a>
+      <a href="learner_profile.html">Profile</a>
+      <a href="learner_doubt_request.html">Request Doubt</a>
+      <a href="learner_logout.html">Logout</a>
+    </div>
+
+    <div class="main">
+      <h1>Upcoming Sessions</h1>
+      <p class="subtext">Check out all upcoming live sessions and workshops</p>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by title..." />
+      </div>
+
+      <div class="session-grid" id="sessionContainer"></div>
+    </div>
+
+    <script>
+      async function loadSessions() {
+        const container = document.getElementById("sessionContainer");
+
+        const res = await fetch("/api/sessions/learner", {
+          credentials: "include",
+        });
+
+        const sessions = await res.json();
+
+        container.innerHTML = "";
+
+        if (!sessions.length) {
+          container.innerHTML = "<p>No upcoming sessions.</p>";
+          return;
+        }
+
+        sessions.forEach((s) => {
+          container.innerHTML += `
+    <div class="card">
+      <h3>${s.title}</h3>
+      <p><strong>Date:</strong> ${new Date(s.scheduled_at).toLocaleString()}</p>
+      <p><strong>Type:</strong> ${s.session_type}</p>
+      <p><strong>Status:</strong> ${s.status}</p>
+      <button class="join-btn" onclick="joinSession(${s.session_id})">
+        Join Meet
+      </button>
+    </div>
+  `;
+        });
+      }
+
+      async function joinSession(id) {
+        const res = await fetch(`/join-session/${id}`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.href = data.meeting_link;
+        } else {
+          alert(data.message);
+        }
+      }
+      loadSessions();
+    </script>
+  </body>
+</html>

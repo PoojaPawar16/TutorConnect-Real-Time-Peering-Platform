@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AI Tutor</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      /* Page Layout */
+
+      body {
+        display: flex;
+        height: 100vh;
+        background: #f1f5f9;
+      }
+
+      /* Sidebar */
+
+      .sidebar {
+        width: 230px;
+        background: #1e293b;
+        color: white;
+        padding: 20px;
+      }
+
+      .logo {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 30px;
+      }
+
+      .sidebar nav {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sidebar nav a {
+        color: #cbd5f5;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+
+      .sidebar nav a:hover {
+        background: #334155;
+      }
+
+      .sidebar nav a.active {
+        background: #3b5bdb;
+        color: white;
+      }
+
+      /* Chat Area */
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+
+      .chat-header {
+        background: #3b5bdb;
+        color: white;
+        padding: 18px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      /* Chat messages */
+
+      .chat {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+        line-height: 1.7;
+      }
+
+      /* Messages */
+
+      .user {
+        color: #2563eb;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+
+      .ai {
+        color: #16a34a;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+
+      .message {
+        margin-left: 10px;
+        margin-top: 5px;
+        white-space: pre-line;
+        color: #333;
+      }
+
+      /* Input area */
+
+      .input-area {
+        display: flex;
+        padding: 18px;
+        border-top: 1px solid #ddd;
+        background: white;
+      }
+
+      .input-area input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .input-area button {
+        margin-left: 10px;
+        padding: 12px 20px;
+        background: #16a34a;
+        border: none;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .input-area button:hover {
+        background: #15803d;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+
+    <div class="sidebar">
+      <h2 class="logo">TutorConnect</h2>
+
+      <nav>
+        <a href="courses.html">Find Tutors</a>
+        <a href="learner_profile.html">Profile</a>
+        <a href="learner_sessions.html">Sessions</a>
+        <a href="learner_doubt_request.html">Request Doubt</a>
+        <a href="learner_group.html">Groups</a>
+        <a href="learner_quizzes.html">Quizzes</a>
+        <a href="ai_test.html" class="active">Chat</a>
+        <a href="learner_logout.html">Logout</a>
+      </nav>
+    </div>
+
+    <!-- Chat Section -->
+
+    <div class="main">
+      <div class="chat-header">🤖 AI Tutor</div>
+
+      <div id="chat" class="chat"></div>
+
+      <div class="input-area">
+        <input id="message" placeholder="Ask your question..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const input = document.getElementById("message");
+
+      input.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+      async function sendMessage() {
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        const chat = document.getElementById("chat");
+
+        chat.innerHTML += `
+<div class="user">You:</div>
+<div class="message">${message}</div>
+`;
+
+        input.value = "";
+
+        chat.innerHTML += `<div id="typing">AI is typing...</div>`;
+
+        chat.scrollTop = chat.scrollHeight;
+
+        const res = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        document.getElementById("typing").remove();
+
+        chat.innerHTML += `
+<div class="ai">AI:</div>
+<div class="message">${data.reply}</div>
+`;
+
+        chat.scrollTop = chat.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

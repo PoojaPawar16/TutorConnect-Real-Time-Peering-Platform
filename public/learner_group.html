@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Groups | TutorConnect</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        display: flex;
+        background: #f3f6fa;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #243447;
+        color: white;
+        height: 100vh;
+        position: fixed;
+        padding-top: 20px;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        color: #00b894;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: white;
+        transition: 0.3s;
+        border-left: 4px solid transparent;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #00b894;
+        border-left: 4px solid white;
+      }
+
+      /* Main */
+      .main {
+        margin-left: 250px;
+        padding: 30px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+      }
+
+      .groups-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .group-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
+        transition: 0.3s;
+      }
+
+      .group-card:hover {
+        transform: translateY(-3px);
+      }
+
+      .group-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #243447;
+      }
+
+      .group-info {
+        font-size: 14px;
+        margin-bottom: 6px;
+        color: #555;
+      }
+
+      .view-btn {
+        margin-top: 12px;
+        padding: 8px 15px;
+        background: #00b894;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .view-btn:hover {
+        background: #01966d;
+      }
+
+      .empty-message {
+        background: white;
+        padding: 30px;
+        text-align: center;
+        border-radius: 10px;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
+        color: #777;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="courses.html">Find Tutors</a>
+      <a href="learner_profile.html">Profile</a>
+      <a href="learner_sessions.html">Sessions</a>
+      <a href="learner_doubt_request.html">Request Doubt</a>
+      <a href="learner_group.html" class="active">Groups</a>
+      <a href="learner_logout.html">Logout</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <h1>📚 My Groups</h1>
+
+      <div id="groupsContainer" class="groups-container"></div>
+    </div>
+
+    <script>
+      async function loadGroups() {
+        try {
+          const res = await fetch("/api/learner/groups");
+          const groups = await res.json();
+
+          const container = document.getElementById("groupsContainer");
+          container.innerHTML = "";
+
+          if (!groups || groups.length === 0) {
+            container.innerHTML = `
+            <div class="empty-message">
+              You are not enrolled in any groups yet.
+            </div>
+          `;
+            return;
+          }
+
+          groups.forEach((group) => {
+            container.innerHTML += `
+            <div class="group-card">
+              <div class="group-title">${group.group_name}</div>
+              <div class="group-info"><strong>Subject:</strong> ${group.subject}</div>
+              <div class="group-info"><strong>Tutor:</strong> ${group.tutor_name || "Not Assigned"}</div>
+              <div class="group-info">${group.description || ""}</div>
+              <button class="view-btn" onclick="viewSessions(${group.group_id})">
+                View Group Sessions
+              </button>
+            </div>
+          `;
+          });
+        } catch (error) {
+          console.error("Error loading groups:", error);
+        }
+      }
+
+      function viewSessions(groupId) {
+        window.location.href = `learner_sessions.html?group_id=${groupId}`;
+      }
+
+      loadGroups();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tutor Progress | TutorConnect</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        background: #f4f6fb;
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        width: 240px;
+        background: #1f2937;
+        color: white;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .sidebar h2 {
+        color: #22c55e;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 10px;
+        color: #d1d5db;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #10b981;
+        color: white;
+      }
+
+      /* ===== MAIN ===== */
+      .main {
+        flex: 1;
+        padding: 30px;
+      }
+
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      th {
+        background: #10b981;
+        color: white;
+        padding: 12px;
+        text-align: left;
+      }
+
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .progress-bar-container {
+        background: #e5e7eb;
+        height: 10px;
+        border-radius: 6px;
+        margin-top: 5px;
+      }
+
+      .progress-bar {
+        height: 10px;
+        border-radius: 6px;
+        background: #2563eb;
+      }
+
+      .overall {
+        font-weight: bold;
+        color: #111827;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_profile.html">Profile</a>
+      <a class="active">Progress</a>
+      <a href="tutor_sessions.html">Sessions</a>
+      <a href="completed_sessions.html">Complete Session</a>
+      <a href="tutor_doubt_requests.html">Doubt Request</a>
+      <a href="tutor_groups.html">Groups</a>
+      <a href="tutor_logout.html">Logout</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <h1>📊 Overall Learner Progress</h1>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Learner</th>
+              <th>Attendance</th>
+              <th>Tasks</th>
+              <th>Overall</th>
+            </tr>
+          </thead>
+          <tbody id="progressTable">
+            <tr>
+              <td colspan="4">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      async function loadProgress() {
+        try {
+          const res = await fetch("/api/tutor/overall-progress");
+          const data = await res.json();
+
+          const table = document.getElementById("progressTable");
+          table.innerHTML = "";
+
+          if (!data.length) {
+            table.innerHTML = `
+        <tr>
+          <td colspan="4">No learners with sessions yet.</td>
+        </tr>
+      `;
+            return;
+          }
+
+          data.forEach((l) => {
+            table.innerHTML += `
+        <tr>
+          <td>${l.learner_name}</td>
+
+          <td>
+            ${l.attendance_percent}%
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width:${l.attendance_percent}%"></div>
+            </div>
+          </td>
+
+          <td>
+            ${l.task_percent}%
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width:${l.task_percent}%"></div>
+            </div>
+          </td>
+
+          <td class="overall">${l.overall_percent}%</td>
+        </tr>
+      `;
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      loadProgress();
+    </script>
+  </body>
+</html>

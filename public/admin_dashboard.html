@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard | TutorConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="admin_dashboard.css" />
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>TutorConnect</h2>
+      <nav>
+        <a class="active">Dashboard</a>
+        <a href="admin_notifications.html">Notifications</a>
+        <a href="group.html">Groups</a>
+        <a href="admin_tutors.html">Tutors</a>
+        <a href="admin_learners.html">Learners</a>
+        <!-- <a href="admin_activity.html">Activity</a> -->
+        <a href="admin_logout.html">Logout</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header>
+        <h1>Admin Dashboard</h1>
+        <p>Manage tutors, learners, and platform activity</p>
+      </header>
+
+      <!-- Stats -->
+      <section class="stats">
+        <div class="stat-card">
+          <h4>Total Tutors</h4>
+          <span id="tutorCount">0</span>
+        </div>
+        <div class="stat-card">
+          <h4>Total Learners</h4>
+          <span id="learnerCount">0</span>
+        </div>
+        <div class="stat-card">
+          <h4>Active Groups</h4>
+          <span id="groupCount">0</span>
+        </div>
+        <div class="stat-card">
+          <h4>Pending Tutors</h4>
+          <span id="pendingCount">0</span>
+        </div>
+      </section>
+
+      <!-- Tutor Profile Approvals -->
+      <section class="card-section">
+        <h2>Pending Tutor Profile Approvals</h2>
+        <div id="pendingTutorProfiles"></div>
+      </section>
+
+      <!-- Learner Tutor Requests -->
+      <section class="card-section">
+        <h2>Learner Tutor Requests</h2>
+        <div id="learnerRequests"></div>
+      </section>
+    </main>
+
+    <script>
+      /* ================== DASHBOARD COUNTS ================== */
+      async function loadDashboard() {
+        const r = await fetch("/api/admin/dashboard");
+        const d = await r.json();
+        tutorCount.textContent = d.totalTutors;
+        learnerCount.textContent = d.totalLearners;
+        groupCount.textContent = d.totalGroups;
+        pendingCount.textContent = d.pendingTutors;
+      }
+
+      /* ================== TUTOR PROFILE APPROVALS ================== */
+      async function loadPendingTutors() {
+        const res = await fetch("/api/admin/tutor-profiles/pending");
+        const tutors = await res.json();
+        const box = document.getElementById("pendingTutorProfiles");
+        box.innerHTML = "";
+
+        if (!tutors.length) {
+          box.innerHTML = "<p class='empty'>No pending tutor profiles 🎉</p>";
+          return;
+        }
+
+        tutors.forEach((t) => {
+          box.innerHTML += `
+      <div class="card">
+        <div>
+          <h3>${t.name}</h3>
+          <p>${t.email}</p>
+          <p><b>Subjects:</b> ${t.subjects || "-"}</p>
+          <p><b>Skills:</b> ${t.skills || "-"}</p>
+          <p>${t.bio || ""}</p>
+          ${
+            t.certifications
+              ? `<a href="/uploads/${t.certifications}" target="_blank">📄 View Certificate</a>`
+              : "<small>No certificates</small>"
+          }
+        </div>
+        <div class="actions">
+          <button class="approve" onclick="approveTutor(${t.tutor_id})">Approve</button>
+          <button class="reject" onclick="rejectTutor(${t.tutor_id})">Reject</button>
+        </div>
+      </div>
+    `;
+        });
+      }
+
+      async function approveTutor(id) {
+        await fetch(`/api/admin/tutors/${id}/approve`, { method: "POST" });
+        loadPendingTutors();
+        loadDashboard();
+      }
+
+      async function rejectTutor(id) {
+        await fetch(`/api/admin/tutors/${id}/reject`, { method: "POST" });
+        loadPendingTutors();
+        loadDashboard();
+      }
+
+      /* ================== LEARNER TUTOR REQUESTS ================== */
+      async function loadLearnerRequests() {
+        const r = await fetch("/api/admin/tutor_requests");
+        const requests = await r.json();
+        const tutors = await fetch("/api/tutors").then((r) => r.json());
+        const box = document.getElementById("learnerRequests");
+        box.innerHTML = "";
+
+        requests.forEach((req) => {
+          box.innerHTML += `
+      <div class="card">
+        <div>
+          <h3>${req.learner_name}</h3>
+          <p><b>Subject:</b> ${req.subject}</p>
+          <p>${req.message}</p>
+          <span class="badge ${req.status}">${req.status}</span>
+        </div>
+        <div class="actions">
+          <select id="tutor-${req.request_id}">
+            <option value="">Assign Tutor</option>
+            ${tutors.map((t) => `<option value="${t.tutor_id}">${t.name}</option>`).join("")}
+          </select>
+          <button class="approve" onclick="assignTutor(${req.request_id})">Assign</button>
+        </div>
+      </div>
+    `;
+        });
+      }
+
+      async function assignTutor(requestId) {
+        const tutorId = document.getElementById(`tutor-${requestId}`).value;
+        if (!tutorId) return alert("Select a tutor first");
+
+        await fetch(`/api/admin/tutor_requests/${requestId}/assign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tutor_id: tutorId }),
+        });
+
+        loadLearnerRequests();
+      }
+
+      /* ================== INIT ================== */
+      loadDashboard();
+      loadPendingTutors();
+      loadLearnerRequests();
+    </script>
+  </body>
+</html>

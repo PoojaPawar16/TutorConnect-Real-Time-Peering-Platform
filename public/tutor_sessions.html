@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutor Sessions | TutorConnect</title>
+    <link rel="stylesheet" href="/tutor_dashboard.css" />
+
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        display: flex;
+        background: #f3f6fa;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 250px;
+        background: #243447;
+        color: white;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        color: #00b894;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        text-decoration: none;
+        color: white;
+        padding: 12px 20px;
+        display: block;
+        border-left: 4px solid transparent;
+        transition: 0.3s;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #00b894;
+        border-left: 4px solid #fff;
+      }
+
+      /* Main Section */
+      .main-content {
+        margin-left: 250px;
+        padding: 30px;
+        width: 100%;
+      }
+
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+      }
+
+      .session-form {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 25px;
+      }
+
+      label {
+        display: block;
+        font-weight: 500;
+        margin-top: 10px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+
+      button {
+        background: #00b894;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 15px;
+        font-size: 15px;
+      }
+
+      button:hover {
+        background: #01966d;
+      }
+
+      .session-list {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+        padding: 10px;
+      }
+
+      th {
+        background: #00b894;
+        color: white;
+      }
+
+      .recorded {
+        color: red;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_profile.html">Profile</a>
+      <a href="tutor_sessions.html" class="active">Sessions</a>
+      <a href="completed_sessions.html">Complete Session</a>
+      <a href="tutor_progress.html">Progress</a>
+      <a href="tutor_doubt_requests.html">Doubt Request</a>
+      <a href="tutor_group.html">Groups</a>
+      <a href="tutor_logout.html">Logout</a>
+    </div>
+
+    <div class="main-content">
+      <h1>Manage Sessions</h1>
+
+      <!-- Schedule Session -->
+      <div class="session-form">
+        <h2>📅 Schedule a New Session</h2>
+        <form id="scheduleForm">
+          <label>Session Title:</label>
+          <input type="text" id="title" required />
+
+          <label>Description:</label>
+          <textarea id="description" rows="2"></textarea>
+
+          <label>Date & Time:</label>
+          <input type="datetime-local" id="startTime" required />
+
+          <label>End Time:</label>
+          <input type="datetime-local" id="endTime" required />
+
+          <button type="submit">Create Google Meet Session</button>
+        </form>
+      </div>
+
+      <!-- List of Sessions -->
+      <div class="session-list">
+        <h2>📘 Scheduled Sessions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Session Title</th>
+              <th>Scheduled Date</th>
+              <th>Meeting Link</th>
+              <th>Status</th>
+              <th>Recording</th>
+              <th>Attendance</th>
+            </tr>
+          </thead>
+          <tbody id="sessionTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // Get group_id from URL (if exists)
+      const urlParams = new URLSearchParams(window.location.search);
+      const groupId = urlParams.get("group_id");
+
+      // Create a new meeting
+      document
+        .getElementById("scheduleForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const title = document.getElementById("title").value;
+          const description = document.getElementById("description").value;
+          const startTime = document.getElementById("startTime").value;
+          const endTime = document.getElementById("endTime").value;
+
+          const payload = {
+            title,
+            description,
+            startTime,
+            endTime,
+            session_type: groupId ? "group" : "private",
+            group_id: groupId ? parseInt(groupId) : null,
+            learner_id: null,
+          };
+
+          console.log("Sending payload:", payload); // 🔎 DEBUG
+
+          const res = await fetch("/api/tutor/create-meet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.meetLink) {
+            alert("✅ Google Meet created successfully!");
+            location.reload();
+          } else {
+            alert("❌ Failed to create meeting.");
+            console.log("Error response:", data);
+          }
+        });
+
+      // 🔹 Load Tutor Sessions
+      async function loadSessions() {
+        const res = await fetch("/api/sessions/tutor", {
+          credentials: "include",
+        });
+
+        const sessions = await res.json();
+        const tbody = document.getElementById("sessionTableBody");
+        tbody.innerHTML = "";
+
+        sessions.forEach((s) => {
+          tbody.innerHTML += `
+        <tr>
+          <td>${s.title || "Untitled"}</td>
+          <td>${new Date(s.scheduled_at).toLocaleString()}</td>
+          <td>
+            <a href="${s.meeting_link}" target="_blank">
+              Join Meet
+            </a>
+          </td>
+          <td>${s.status}</td>
+          <td>
+            ${
+              s.recording_link
+                ? `<a href="${s.recording_link}" target="_blank">View</a>`
+                : '<span class="recorded">Not Uploaded</span>'
+            }
+          </td>
+          <td>
+            <button onclick="viewAttendance(${s.session_id})">
+              View Attendance
+            </button>
+          </td>
+        </tr>
+      `;
+        });
+      }
+
+      // 🔹 Redirect to Attendance Page
+      function viewAttendance(id) {
+        window.location.href = "tutor_attendance.html?session_id=" + id;
+      }
+
+      loadSessions();
+    </script>
+  </body>
+</html>

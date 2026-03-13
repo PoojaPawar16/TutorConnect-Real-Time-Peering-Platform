@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Assign Task | TutorConnect</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: 220px;
+        background: #111827;
+        color: white;
+        height: 100vh;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h3 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+      }
+
+      .sidebar a:hover {
+        background: #1f2937;
+      }
+
+      .active {
+        background: #00c896;
+      }
+
+      /* MAIN CONTENT */
+      .main {
+        margin-left: 220px;
+        padding: 40px;
+        background: #f4f6f9;
+        width: 100%;
+      }
+
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        max-width: 600px;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-top: 15px;
+        font-weight: 600;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      button {
+        margin-top: 20px;
+        background: #00c896;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #00b386;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <h3>Tutor Panel</h3>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_sessions.html">Sessions</a>
+      <a href="completed_sessions.html">Completed Sessions</a>
+      <a href="tutor_groups.html">Groups</a>
+      <a href="tutor_profile.html">Profile</a>
+      <a href="tutor_logout.html">Logout</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <div class="card">
+        <h2>📌 Assign Task</h2>
+
+        <form id="taskForm">
+          <label>Task Title</label>
+          <input type="text" id="title" required />
+
+          <label>Deadline</label>
+          <input type="datetime-local" id="deadline" required />
+
+          <label>Task Type</label>
+          <select id="task_type" required>
+            <option value="">Select Type</option>
+            <option value="mcq">MCQ</option>
+            <option value="coding">Coding</option>
+          </select>
+
+          <div id="codingSection" style="display: none">
+            <label>Problem Description</label>
+            <textarea id="problem_description" rows="4"></textarea>
+          </div>
+
+          <button type="submit">Create Task</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("sessionId");
+
+      const taskTypeSelect = document.getElementById("task_type");
+      const codingSection = document.getElementById("codingSection");
+
+      taskTypeSelect.addEventListener("change", () => {
+        if (taskTypeSelect.value === "coding") {
+          codingSection.style.display = "block";
+        } else {
+          codingSection.style.display = "none";
+        }
+      });
+
+      document
+        .getElementById("taskForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const title = document.getElementById("title").value;
+          const deadline = document.getElementById("deadline").value;
+          const task_type = document.getElementById("task_type").value;
+          const problem_description = document.getElementById(
+            "problem_description",
+          ).value;
+
+          const response = await fetch(
+            `/api/tutor/sessions/${sessionId}/task`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title,
+                deadline,
+                task_type,
+                problem_description,
+              }),
+            },
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            if (task_type === "mcq") {
+              window.location.href = `add_questions.html?taskId=${data.task_id}`;
+            } else {
+              alert("Coding task created successfully!");
+              window.location.href = "completed_sessions.html";
+            }
+          } else {
+            alert(data.error || "Something went wrong");
+          }
+        });
+    </script>
+  </body>
+</html>

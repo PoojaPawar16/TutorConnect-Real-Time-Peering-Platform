@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learner Profile | TutorConnect</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        display: flex;
+        background: #f3f6fb;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 240px;
+        background: linear-gradient(180deg, #0f3057, #1f5fa6);
+        color: white;
+        height: 100vh;
+        padding: 25px 15px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 35px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px;
+        margin-bottom: 10px;
+        text-decoration: none;
+        color: white;
+        border-radius: 8px;
+        transition: 0.3s;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Main */
+      .main {
+        margin-left: 240px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      /* Cards */
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 35px;
+      }
+
+      /* Profile Header */
+      .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+      }
+
+      .profile-img {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #2563eb;
+      }
+
+      .profile-info h1 {
+        color: #1e293b;
+      }
+
+      .profile-info p {
+        color: #64748b;
+      }
+
+      /* Form */
+      label {
+        font-weight: 600;
+        margin-top: 15px;
+        display: block;
+        color: #334155;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+      }
+
+      button {
+        margin-top: 20px;
+        padding: 12px 20px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #1e40af;
+      }
+
+      /* Progress Section */
+      .progress-title {
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .progress-item {
+        margin-bottom: 25px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #e2e8f0;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #00b894, #00cec9);
+        border-radius: 20px;
+        transition: width 0.6s ease;
+      }
+
+      .percent-text {
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="courses.html">Find Tutors</a>
+      <a href="learner_group.html">My Groups</a>
+      <a href="learner_sessions.html">Sessions</a>
+      <a href="learner_quizzes.html">Quizzes</a>
+      <a href="learner_profile.html" class="active">Profile</a>
+      <a href="learner_doubt_request.html">Request Doubt</a>
+      <a href="learner_logout.html">Logout</a>
+    </div>
+
+    <div class="main">
+      <!-- Profile Card -->
+      <div class="card">
+        <div class="profile-header">
+          <img
+            id="profilePicPreview"
+            class="profile-img"
+            src=""
+            alt="Profile"
+          />
+          <div class="profile-info">
+            <h1 id="displayName">Learner Name</h1>
+            <p id="displayEmail">Email</p>
+          </div>
+        </div>
+
+        <form id="profileForm" enctype="multipart/form-data">
+          <label>Bio</label>
+          <textarea id="bio" rows="3"></textarea>
+
+          <label>Skills</label>
+          <input type="text" id="skills" />
+
+          <label>Goals</label>
+          <input type="text" id="goals" />
+
+          <label>Profile Picture</label>
+          <input type="file" id="profile_pic" />
+
+          <button type="submit">Save Profile</button>
+        </form>
+      </div>
+
+      <!-- Progress Card -->
+      <div class="card">
+        <div class="progress-title">📊 Learning Progress</div>
+
+        <div class="progress-item">
+          <div class="percent-text">
+            Attendance: <span id="attendancePercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div id="attendanceBar" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="progress-item">
+          <div class="percent-text">
+            Task Completion: <span id="taskPercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div id="taskBar" class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Load current user
+      async function loadUser() {
+        const res = await fetch("/api/current_user", {
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        document.getElementById("displayName").innerText = data.user.name;
+        document.getElementById("displayEmail").innerText = data.user.email;
+      }
+
+      // Load profile
+      async function loadProfile() {
+        const res = await fetch("/api/learner/profile", {
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        document.getElementById("bio").value = data.bio || "";
+        document.getElementById("skills").value = data.skills || "";
+        document.getElementById("goals").value = data.goals || "";
+
+        if (data.profile_pic) {
+          document.getElementById("profilePicPreview").src =
+            "/uploads/" + data.profile_pic;
+        }
+      }
+
+      // Load progress
+      async function loadProgress() {
+        const res = await fetch("/api/learner/progress", {
+          credentials: "include",
+        });
+        const data = await res.json();
+
+        document.getElementById("attendancePercent").innerText =
+          data.attendance_percent + "%";
+        document.getElementById("taskPercent").innerText =
+          data.task_percent + "%";
+
+        document.getElementById("attendanceBar").style.width =
+          data.attendance_percent + "%";
+        document.getElementById("taskBar").style.width =
+          data.task_percent + "%";
+      }
+
+      // Save profile
+      document
+        .getElementById("profileForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("bio", document.getElementById("bio").value);
+          formData.append("skills", document.getElementById("skills").value);
+          formData.append("goals", document.getElementById("goals").value);
+
+          const file = document.getElementById("profile_pic").files[0];
+          if (file) formData.append("profile_pic", file);
+
+          const res = await fetch("/api/learner/profile", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+
+          const result = await res.json();
+          alert(result.message);
+
+          loadProfile();
+        });
+
+      loadUser();
+      loadProfile();
+      loadProgress();
+    </script>
+  </body>
+</html>

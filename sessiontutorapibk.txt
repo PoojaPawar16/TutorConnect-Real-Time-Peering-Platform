@@ -1,0 +1,15 @@
+app.get("/api/sessions/tutor", (req, res) => {
+  if (!req.session.user || req.session.user.role !== "tutor")
+    return res.status(403).json({ error: "Access denied" });
+
+  const tutor_id = req.session.user.id;
+  db.query(
+    "SELECT * FROM sessions WHERE tutor_id=?",
+    [tutor_id],
+    (err, results) => {
+      if (err)
+        return res.status(500).json({ error: "Failed to fetch sessions" });
+      res.json(results);
+    },
+  );
+});

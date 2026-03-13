@@ -1,0 +1,271 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin - Approved Tutors</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        background: #f4f6f9;
+      }
+
+      .sidebar {
+        width: 230px;
+        background: #0f2744;
+        color: white;
+        height: 100vh;
+        padding: 20px;
+      }
+
+      .sidebar h2 {
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-bottom: 8px;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #1d3b63;
+      }
+
+      .main {
+        flex: 1;
+        padding: 30px;
+      }
+
+      h2 {
+        margin-bottom: 20px;
+      }
+
+      .profile-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+      }
+
+      .profile-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .profile-info h3 {
+        margin: 0;
+      }
+
+      .profile-info p {
+        margin: 4px 0;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .rating {
+        font-weight: bold;
+        color: #f59e0b;
+      }
+
+      .complaints {
+        color: #dc2626;
+        font-weight: bold;
+      }
+
+      .btn {
+        margin-top: 8px;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .suspend-btn {
+        background: #ef4444;
+        color: white;
+      }
+
+      .review-btn {
+        background: #2563eb;
+        color: white;
+        margin-left: 5px;
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 20px;
+        width: 400px;
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 10px;
+      }
+
+      .close {
+        float: right;
+        cursor: pointer;
+        color: red;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="admin_dashboard.html">Dashboard</a>
+      <a href="admin_notifications.html">Notifications</a>
+      <a href="group.html">Groups</a>
+      <a href="admin_tutors.html" class="active">Tutors</a>
+      <a href="admin_learners.html">Learners</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+
+    <div class="main">
+      <h2>Approved Tutors</h2>
+      <div id="tutorContainer"></div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal" id="reviewModal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">X</span>
+        <h3>Reviews</h3>
+        <div id="reviewContent"></div>
+      </div>
+    </div>
+
+    <script>
+      function logout() {
+        fetch("/api/logout", { method: "POST" }).then(
+          () => (window.location.href = "/login.html"),
+        );
+      }
+
+      window.onload = function () {
+        fetch("/api/admin/tutors/approved")
+          .then((res) => res.json())
+          .then((data) => {
+            const container = document.getElementById("tutorContainer");
+            container.innerHTML = "";
+
+            if (!data || data.length === 0) {
+              container.innerHTML = "<p>No approved tutors found</p>";
+              return;
+            }
+
+            data.forEach((tutor) => {
+              const imgSrc = tutor.profile_pic
+                ? "/uploads/" + tutor.profile_pic
+                : "https://ui-avatars.com/api/?name=" + tutor.name;
+
+              const card = document.createElement("div");
+              card.className = "profile-card";
+
+              card.innerHTML = `
+          <img src="${imgSrc}" class="profile-img" />
+
+          <div class="profile-info">
+            <h3>${tutor.name}</h3>
+            <p>${tutor.email}</p>
+            <p><strong>Bio:</strong> ${tutor.bio || "N/A"}</p>
+    <p><strong>Subjects:</strong> ${tutor.subjects || "N/A"}</p>
+    <p><strong>Skills:</strong> ${tutor.skills || "N/A"}</p>
+
+            <p>⭐ Rating: 
+              <span class="rating">
+                ${tutor.avg_rating || 0} 
+                (${tutor.total_reviews || 0} reviews)
+              </span>
+            </p>
+
+            <p>⚠ Complaints: 
+              <span class="complaints">
+                ${tutor.complaints || 0}
+              </span>
+            </p>
+
+            <button class="btn suspend-btn"
+              onclick="suspendTutor(${tutor.id}, ${tutor.avg_rating || 0}, ${tutor.complaints || 0})">
+              Suspend
+            </button>
+
+            <button class="btn review-btn"
+              onclick="viewReviews(${tutor.id})">
+              View Reviews
+            </button>
+          </div>
+        `;
+
+              container.appendChild(card);
+            });
+          });
+      };
+
+      function suspendTutor(id, rating, complaints) {
+        if (rating >= 4 && complaints < 3) {
+          alert("Tutor performance is good. Suspension not recommended.");
+          return;
+        }
+
+        if (!confirm("Are you sure you want to suspend this tutor?")) return;
+
+        fetch(`/api/admin/tutors/${id}/suspend`, { method: "POST" })
+          .then((res) => res.json())
+          .then((data) => {
+            alert(data.message);
+            location.reload();
+          });
+      }
+
+      function viewReviews(tutorId) {
+        fetch(`/api/admin/tutor/${tutorId}/reviews`)
+          .then((res) => res.json())
+          .then((data) => {
+            const content = document.getElementById("reviewContent");
+            content.innerHTML = "";
+
+            if (data.length === 0) {
+              content.innerHTML = "<p>No reviews available</p>";
+            }
+
+            data.forEach((r) => {
+              content.innerHTML += `
+          <div style="margin-bottom:10px;">
+            ⭐ ${r.rating} <br/>
+            <small>${r.review || "No comment"}</small>
+          </div>
+          <hr/>
+        `;
+            });
+
+            document.getElementById("reviewModal").style.display = "flex";
+          });
+      }
+
+      function closeModal() {
+        document.getElementById("reviewModal").style.display = "none";
+      }
+    </script>
+  </body>
+</html>

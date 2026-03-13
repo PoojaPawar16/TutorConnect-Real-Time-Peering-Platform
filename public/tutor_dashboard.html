@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutor Dashboard</title>
+    <link rel="stylesheet" href="tutor_dashboard.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <h2 class="logo">TutorConnect</h2>
+      <nav>
+        <a href="tutor_dashboard.html" class="active">🏠 Dashboard</a>
+        <a href="tutor_profile.html">👤 My Profile</a>
+        <a href="tutor_sessions.html">📅 Sessions</a>
+        <a href="completed_sessions.html">Complete Session</a>
+        <!-- <a href="chat.html">💬 Chat</a> -->
+        <a href="tutor_group.html">Groups</a>
+        <a href="tutor_doubt_requests.html">Doubt Request</a>
+        <a href="tutor_logout.html" class="logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header>
+        <h1 id="welcomeText">Welcome, Tutor 👋</h1>
+        <p>Manage your profile, learners, and sessions efficiently.</p>
+      </header>
+
+      <section class="cards">
+        <div class="card">
+          <h3>My Profile</h3>
+          <p>Update your skills, subjects & availability.</p>
+          <a href="tutor_profile.html" class="btn">Go to Profile</a>
+        </div>
+        <div class="card">
+          <h3>Upcoming Sessions</h3>
+          <p>View & manage scheduled learner sessions.</p>
+          <a href="sessions.html" class="btn">View Sessions</a>
+        </div>
+        <div class="card">
+          <h3>My Learners</h3>
+          <p>See the list of learners connected to you.</p>
+          <a href="students.html" class="btn">View Learners</a>
+        </div>
+      </section>
+
+      <section class="notifications">
+        <h2>Latest Notifications 🔔</h2>
+        <ul id="notificationList">
+          <li>No new notifications</li>
+        </ul>
+      </section>
+    </main>
+
+    <script>
+      window.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const res = await fetch("/api/current_user");
+          if (res.ok) {
+            const { user } = await res.json();
+            document.getElementById("welcomeText").innerText =
+              `Welcome, ${user.name}`;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>

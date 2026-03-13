@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin - Learners | TutorConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        background: #f4f6fb;
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        width: 240px;
+        background: #111827;
+        color: white;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .sidebar h2 {
+        margin-bottom: 30px;
+        color: #10b981;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 10px;
+        color: #d1d5db;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #1f2937;
+        color: white;
+      }
+
+      /* ===== MAIN ===== */
+      .main {
+        flex: 1;
+        padding: 30px;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .info {
+        display: flex;
+        align-items: center;
+      }
+
+      .avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin-right: 20px;
+      }
+
+      .details p {
+        margin: 4px 0;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .btn.suspend {
+        background: #ef4444;
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="admin_dashboard.html">Dashboard</a>
+      <a href="admin_notifications.html">Notifications</a>
+      <a href="admin_groups.html">Groups</a>
+      <a href="admin_tutors.html">Tutors</a>
+      <a class="active">Learners</a>
+      <a href="admin_logout.html">Logout</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <h1>All Learners</h1>
+
+      <div id="learnerContainer">Loading learners...</div>
+    </div>
+
+    <script>
+      async function loadLearners() {
+        try {
+          const res = await fetch("/api/admin/learners");
+          const learners = await res.json();
+
+          const container = document.getElementById("learnerContainer");
+          container.innerHTML = "";
+
+          if (!learners.length) {
+            container.innerHTML = "<p>No learners found.</p>";
+            return;
+          }
+
+          learners.forEach((l) => {
+            const initials = l.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase();
+
+            container.innerHTML += `
+        <div class="card">
+          <div class="info">
+            <div class="avatar">${initials}</div>
+            <div class="details">
+              <p><strong>${l.name}</strong></p>
+              <p>${l.email}</p>
+              <p>Sessions Attended: ${l.sessions_attended || 0}</p>
+            </div>
+          </div>
+          <button class="btn suspend" onclick="suspendLearner(${l.id})">
+            Suspend
+          </button>
+        </div>
+      `;
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async function suspendLearner(id) {
+        if (!confirm("Are you sure you want to suspend this learner?")) return;
+
+        await fetch(`/api/admin/suspend-learner/${id}`, {
+          method: "PUT",
+        });
+
+        loadLearners();
+      }
+
+      loadLearners();
+    </script>
+  </body>
+</html>

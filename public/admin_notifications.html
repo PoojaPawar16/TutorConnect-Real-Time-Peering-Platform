@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Notifications | TutorConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      :root {
+        --bg: #f4f6fb;
+        --card: #ffffff;
+        --primary: #2563eb;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --muted: #6b7280;
+        --shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        background: var(--bg);
+        display: flex;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 240px;
+        background: #0f172a;
+        color: #fff;
+        padding: 24px 18px;
+        min-height: 100vh;
+      }
+      .sidebar h2 {
+        margin-bottom: 24px;
+      }
+      .sidebar a {
+        display: block;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        color: #cbd5f5;
+        text-decoration: none;
+        border-radius: 8px;
+      }
+      .sidebar a.active,
+      .sidebar a:hover {
+        background: #1e293b;
+        color: #fff;
+      }
+
+      /* Main */
+      main {
+        flex: 1;
+        padding: 32px;
+      }
+
+      h1 {
+        margin-bottom: 6px;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin-bottom: 28px;
+      }
+
+      section {
+        margin-bottom: 40px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .section-header h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      /* Cards */
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 18px 22px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+      }
+
+      .card strong {
+        font-size: 16px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      select {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        min-width: 220px;
+      }
+
+      button {
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-success {
+        background: var(--success);
+        color: #fff;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-ghost {
+        background: #e5e7eb;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="admin_dashboard.html">Dashboard</a>
+      <a href="admin_notifications.html" class="active">Notifications</a>
+      <a href="admin_tutors.html">Tutors</a>
+      <a href="admin_learners.html">Learners</a>
+      <a href="group.html">Groups</a>
+      <a href="admin_logout.html">Logout</a>
+    </aside>
+
+    <!-- Main -->
+    <main>
+      <h1>Admin Notifications</h1>
+      <p class="subtitle">
+        Review tutor profile approvals and learner tutor requests
+      </p>
+
+      <!-- Tutor Profile Approvals -->
+      <section>
+        <div class="section-header">
+          <h2>🧑‍🏫 Tutor Profile Approvals</h2>
+        </div>
+        <div id="tutorProfileBox"></div>
+      </section>
+
+      <!-- Learner Tutor Requests -->
+      <section>
+        <div class="section-header">
+          <h2>🎓 Learner Tutor Requests</h2>
+        </div>
+        <div id="learnerRequestBox"></div>
+      </section>
+    </main>
+
+    <script>
+      /* ---------------- Tutor Profile Approvals ---------------- */
+      async function loadTutorProfiles() {
+        const res = await fetch("/api/admin/tutor-profiles/pending", {
+          credentials: "same-origin",
+        });
+        const data = await res.json();
+        const box = document.getElementById("tutorProfileBox");
+        box.innerHTML = "";
+
+        if (!data.length) {
+          box.innerHTML = "<p class='muted'>No pending tutor profiles</p>";
+          return;
+        }
+
+        data.forEach((t) => {
+          box.innerHTML += `
+      <div class="card">
+        <strong>${t.name}</strong><br/>
+        <span class="muted">${t.email}</span>
+
+        <p><b>Subjects:</b> ${t.subjects || "-"}</p>
+        <p><b>Skills:</b> ${t.skills || "-"}</p>
+        <p>${t.bio || ""}</p>
+
+        ${t.certificates ? `<a href="${t.certificates}" target="_blank">📄 View Certificate</a>` : ""}
+
+        <div class="actions">
+          <button class="btn-success" onclick="approveTutor(${t.tutor_id})">Approve</button>
+          <button class="btn-danger" onclick="rejectTutor(${t.tutor_id})">Reject</button>
+        </div>
+      </div>
+    `;
+        });
+      }
+
+      async function approveTutor(id) {
+        await fetch(`/api/admin/tutors/${id}/approve`, {
+          method: "POST",
+          credentials: "same-origin",
+        });
+        loadTutorProfiles();
+      }
+
+      async function rejectTutor(id) {
+        await fetch(`/api/admin/tutors/${id}/reject`, {
+          method: "POST",
+          credentials: "same-origin",
+        });
+        loadTutorProfiles();
+      }
+
+      /* ---------------- Learner Tutor Requests ---------------- */
+      async function loadLearnerRequests() {
+        const reqRes = await fetch("/api/admin/tutor_requests", {
+          credentials: "same-origin",
+        });
+        const tutorRes = await fetch("/api/tutors", {
+          credentials: "same-origin",
+        });
+
+        const requests = await reqRes.json();
+        const tutors = await tutorRes.json();
+
+        const box = document.getElementById("learnerRequestBox");
+        box.innerHTML = "";
+
+        requests.forEach((r) => {
+          box.innerHTML += `
+      <div class="card">
+        <strong>${r.learner_name}</strong>
+        <p><b>Subject:</b> ${r.subject}</p>
+        <p>${r.message}</p>
+
+        <div class="row">
+          <select id="sel-${r.request_id}">
+            <option value="">Assign Tutor</option>
+            ${tutors.map((t) => `<option value="${t.tutor_id}">${t.name} (${t.subjects})</option>`).join("")}
+          </select>
+
+          <div class="actions">
+            <button class="btn-primary" onclick="assignTutor(${r.request_id})">Assign</button>
+            <button class="btn-ghost">Close</button>
+          </div>
+        </div>
+
+        <div class="badge">${r.status}</div>
+      </div>
+    `;
+        });
+      }
+
+      async function assignTutor(requestId) {
+        const sel = document.getElementById(`sel-${requestId}`);
+        if (!sel.value) return alert("Select tutor");
+
+        await fetch(`/api/admin/tutor_requests/${requestId}/assign`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tutor_id: sel.value }),
+        });
+
+        loadLearnerRequests();
+      }
+
+      /* ---------------- Init ---------------- */
+      loadTutorProfiles();
+      loadLearnerRequests();
+      setInterval(() => {
+        loadTutorProfiles();
+        loadLearnerRequests();
+      }, 30000);
+    </script>
+  </body>
+</html>

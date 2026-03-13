@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Learner Dashboard | TutorConnect</title>
+    <link rel="stylesheet" href="learner_dashboard.css" />
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2 class="logo">TutorConnect</h2>
+      <nav>
+        <a href="learner_dashboard.html">Dashboard</a>
+        <a href="courses.html">Find Tutors</a>
+        <a href="learner_sessions.html">Sessions</a>
+        <a href="learner_group.html">Groups</a>
+        <a href="learner_doubt_request.html">Request Doubt</a>
+        <a href="learner_profile.html">Profile</a>
+        <a href="learner_logout.html" id="logoutBtn">Logout</a>
+      </nav>
+    </div>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 id="greeting">Welcome</h1>
+          <p class="muted">
+            Request tutors, view enrollments, sessions and notifications
+          </p>
+        </div>
+        <div class="header-actions">
+          <button id="refreshBtn" class="btn small">Refresh</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="panel request-panel">
+          <h3>Request a Tutor</h3>
+          <form id="requestForm" class="form">
+            <label>Subject</label>
+            <input
+              id="subjectInput"
+              type="text"
+              placeholder="E.g. Data Structures, DBMS"
+              required
+            />
+
+            <label>Preferred Tutor (optional)</label>
+            <input
+              id="preferredTutorInput"
+              type="text"
+              placeholder="Tutor name or leave blank"
+            />
+
+            <label>Message (optional)</label>
+            <textarea
+              id="messageInput"
+              rows="3"
+              placeholder="Tell admin about your goals or schedule"
+            ></textarea>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Send Request</button>
+              <button type="button" id="clearBtn" class="btn ghost">
+                Clear
+              </button>
+            </div>
+          </form>
+
+          <div id="requestStatus" class="status"></div>
+        </div>
+
+        <div class="panel enrollments-panel">
+          <h3>Your Enrollments / Groups</h3>
+          <div id="enrollmentsList" class="list">Loading...</div>
+        </div>
+
+        <div class="panel sessions-panel">
+          <h3>Upcoming Sessions</h3>
+          <div id="sessionsList" class="list">Loading...</div>
+        </div>
+
+        <div class="panel notifications-panel">
+          <h3>Notifications</h3>
+          <div id="notificationsList" class="list">Loading...</div>
+        </div>
+      </section>
+
+      <section class="panel request-history">
+        <h3>Your Recent Requests</h3>
+        <div id="requestsHistory" class="list">Loading...</div>
+      </section>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </main>
+
+    <!-- separate JS file -->
+    <script src="assets/learner.js" defer></script>
+  </body>
+</html>

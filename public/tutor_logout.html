@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logout - TutorConnect</title>
+    <link rel="stylesheet" href="tutor_logout.css" />
+  </head>
+  <body>
+    <div class="logout-container">
+      <h2>Are you sure you want to logout?</h2>
+      <button id="logoutBtn" class="btn">Yes, Logout</button>
+      <a href="tutor_dashboard.html" class="cancel-link">Cancel</a>
+      <p id="message"></p>
+    </div>
+
+    <script>
+      const logoutBtn = document.getElementById("logoutBtn");
+      const messageEl = document.getElementById("message");
+
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            messageEl.style.color = "green";
+            messageEl.innerText = data.message;
+
+            setTimeout(() => {
+              // ✅ Redirect back to login page
+              window.location.href = "index.html";
+            }, 1500);
+          } else {
+            messageEl.style.color = "red";
+            messageEl.innerText = data.error || "Logout failed!";
+          }
+        } catch (err) {
+          messageEl.style.color = "red";
+          messageEl.innerText = "Server error. Try again later.";
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>

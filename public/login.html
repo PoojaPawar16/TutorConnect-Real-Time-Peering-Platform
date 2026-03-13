@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - TutorConnect</title>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <header>
+      <h1>TutorConnect</h1>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#about">About</a>
+        <a href="signup.html">Sign Up</a>
+      </nav>
+    </header>
+
+    <section class="login">
+      <div class="form-box">
+        <h2>Login to Your Account</h2>
+        <form id="loginForm">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+
+          <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="signup.html">Sign up here</a></p>
+      </div>
+    </section>
+
+    <footer>
+      <p>&copy; 2025 TutorConnect. All Rights Reserved</p>
+    </footer>
+
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+
+          try {
+            const res = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+              <!-- alert('✅ Welcome ${data.user.name}'); -->
+              window.location.href = data.redirect;
+            } else {
+              alert("❌ " + (data.error || "Invalid login details"));
+            }
+          } catch (err) {
+            console.error("Login error:", err);
+            alert("⚠️ Server error.Please try again later.");
+          }
+        });
+    </script>
+  </body>
+</html>

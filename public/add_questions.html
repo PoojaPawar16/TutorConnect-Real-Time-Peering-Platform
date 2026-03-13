@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Add MCQ Questions | TutorConnect</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 0;
+        display: flex;
+      }
+      .sidebar {
+        width: 220px;
+        background: #111827;
+        color: white;
+        height: 100vh;
+        padding-top: 20px;
+        position: fixed;
+      }
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        color: white;
+        text-decoration: none;
+      }
+      .sidebar a:hover {
+        background: #1f2937;
+      }
+      .main {
+        margin-left: 220px;
+        padding: 40px;
+        width: 100%;
+        background: #f4f6f9;
+      }
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        max-width: 700px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      button {
+        background: #00c896;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #00b386;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h3 style="text-align: center">Tutor Panel</h3>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_profile.html"> My Profile</a>
+      <a href="tutor_sessions.html">Sessions</a>
+      <a href="completed_sessions.html">Completed Sessions</a>
+      <a href="tutor_group.html">Groups</a>
+      <a href="tutor_doubt_requests.html">Doubt Request</a>
+      <a href="tutor_logout.html" class="logout">Logout</a>
+    </div>
+
+    <div class="main">
+      <h2>Add MCQ Question</h2>
+
+      <div class="card">
+        <textarea id="question" placeholder="Enter Question"></textarea>
+        <input type="number" id="marks" placeholder="Marks" value="1" />
+
+        <input type="text" id="opt1" placeholder="Option 1" />
+        <input type="text" id="opt2" placeholder="Option 2" />
+        <input type="text" id="opt3" placeholder="Option 3" />
+        <input type="text" id="opt4" placeholder="Option 4" />
+
+        <label>Correct Option (1-4)</label>
+        <input type="number" id="correct" min="1" max="4" />
+
+        <button onclick="addQuestion()">Add Question</button>
+        <button type="button" onclick="finishMCQ()" style="background: #6c757d">
+          Finish MCQ
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const taskId = urlParams.get("taskId");
+
+      async function addQuestion() {
+        const question = document.getElementById("question").value.trim();
+        const marks = document.getElementById("marks").value;
+
+        const options = [
+          document.getElementById("opt1").value.trim(),
+          document.getElementById("opt2").value.trim(),
+          document.getElementById("opt3").value.trim(),
+          document.getElementById("opt4").value.trim(),
+        ];
+
+        const correct = parseInt(document.getElementById("correct").value);
+
+        if (!question || options.some((opt) => !opt) || !correct) {
+          alert("Please fill all fields properly");
+          return;
+        }
+
+        if (correct < 1 || correct > 4) {
+          alert("Correct option must be between 1 and 4");
+          return;
+        }
+
+        const response = await fetch(`/api/tutor/mcq/${taskId}/add-question`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            marks: parseInt(marks),
+            options,
+            correct_option: correct,
+          }),
+        });
+
+        const data = await response.json();
+        alert(data.message);
+
+        // Clear form
+        document.getElementById("question").value = "";
+        document.getElementById("opt1").value = "";
+        document.getElementById("opt2").value = "";
+        document.getElementById("opt3").value = "";
+        document.getElementById("opt4").value = "";
+        document.getElementById("correct").value = "";
+      }
+
+      function finishMCQ() {
+        alert("MCQ Task Created Successfully!");
+        window.location.href = "completed_sessions.html";
+      }
+    </script>
+  </body>
+</html>

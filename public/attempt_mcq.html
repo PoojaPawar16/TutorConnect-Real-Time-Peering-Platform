@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Attempt Quiz | TutorConnect</title>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 220px;
+        background-color: #1e5f86;
+        color: white;
+        height: 100vh;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        color: white;
+        text-decoration: none;
+      }
+
+      .sidebar a:hover {
+        background-color: #144766;
+      }
+
+      .active {
+        background-color: #144766;
+      }
+
+      /* Main Content */
+      .main {
+        margin-left: 220px;
+        padding: 30px;
+        width: 100%;
+        background-color: #f4f6f9;
+        min-height: 100vh;
+      }
+
+      .quiz-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .question {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+      }
+
+      button {
+        padding: 10px 20px;
+        background: #1e5f86;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #144766;
+      }
+
+      .error {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="courses.html">Find Tutors</a>
+      <a href="learner_sessions.html">Sessions</a>
+      <a href="learner_quizzes.html" class="active">My Quizzes</a>
+      <a href="learner_profile.html">Profile</a>
+      <a href="learner_logout.html">Logout</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <div class="quiz-card">
+        <h2>Attempt MCQ</h2>
+        <div id="quiz-container"></div>
+        <br />
+        <button onclick="submitQuiz()">Submit Quiz</button>
+      </div>
+    </div>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const taskId = urlParams.get("taskId");
+
+      const container = document.getElementById("quiz-container");
+
+      if (!taskId) {
+        container.innerHTML = "<p class='error'>Invalid Task ID</p>";
+      } else {
+        console.log(`/api/learner/mcq/${taskId}`);
+        fetch(`/api/learner/mcq/${taskId}`, {
+          credentials: "include",
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              container.innerHTML = `<p class='error'>${data.error}</p>`;
+              return;
+            }
+
+            data.forEach((question, index) => {
+              let html = `
+                              <div class="question">
+                                <h4>${index + 1}. ${question.question_text}</h4>
+                            `;
+
+              question.options.forEach((option) => {
+                html += `
+                                <label>
+                                  <input type="radio"
+                                         name="q_${question.question_id}"
+                                         value="${option.option_id}">
+                                  ${option.option_text}
+                                </label><br>
+                              `;
+              });
+
+              html += `</div>`;
+              container.innerHTML += html;
+            });
+          })
+          .catch((err) => {
+            container.innerHTML = "<p class='error'>Failed to load quiz</p>";
+          });
+      }
+
+      function submitQuiz() {
+        const answers = [];
+
+        document
+          .querySelectorAll("input[type=radio]:checked")
+          .forEach((input) => {
+            const questionId = input.name.split("_")[1];
+
+            answers.push({
+              question_id: questionId,
+              selected_option_id: input.value,
+            });
+          });
+
+        if (answers.length === 0) {
+          alert("Please answer at least one question.");
+          return;
+        }
+
+        fetch(`/api/learner/mcq/${taskId}/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ answers }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+
+            let resultHTML = `
+          <h2>📊 Quiz Performance Analysis</h2>
+
+          <p><strong>Total Questions:</strong> ${data.total_questions}</p>
+          <p><strong>Correct Answers:</strong> ${data.score}</p>
+          <p><strong>Wrong Answers:</strong> ${data.wrong_answers}</p>
+          <p><strong>Percentage:</strong> ${data.percentage}%</p>
+          <p><strong>Grade:</strong> ${data.grade}</p>
+
+          <h3>${data.message}</h3>
+          <hr>
+          <h2>📝 Detailed Result</h2>
+        `;
+
+            // Detailed Question Results
+            if (data.results) {
+              data.results.forEach((q, index) => {
+                resultHTML += `<div style="margin-bottom:20px;">
+              <h4>${index + 1}. ${q.question_text}</h4>`;
+
+                q.options.forEach((opt) => {
+                  let style = "";
+                  let icon = "";
+
+                  //  Correct answer → Green
+                  if (opt.option_id == q.correct_option_id) {
+                    style = "color:green; font-weight:bold;";
+                    icon = " ✔";
+                  }
+
+                  //  Wrong selected answer → Red
+                  if (
+                    opt.option_id == q.selected_option_id &&
+                    q.selected_option_id != q.correct_option_id
+                  ) {
+                    style = "color:red; font-weight:bold;";
+                    icon = " ✖";
+                  }
+
+                  resultHTML += `
+    <div style="${style}">
+      ${opt.option_number}. ${opt.option_text}${icon}
+    </div>
+  `;
+                });
+
+                resultHTML += `</div><hr>`;
+              });
+            }
+
+            resultHTML += `
+          <button onclick="window.location.reload()">Retake Quiz</button>
+          <button onclick="window.location.href='learner_quizzes.html'">
+            Back to My Quizzes
+          </button>
+        `;
+
+            document.querySelector(".quiz-card").innerHTML = resultHTML;
+          })
+          .catch(() => alert("Submission failed"));
+      }
+    </script>
+  </body>
+</html>

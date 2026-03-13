@@ -1,0 +1,120 @@
+// Tutor Profile Submission / Update
+app.post(
+  "/api/tutors/profile",
+  upload.fields([
+    { name: "profile_pic", maxCount: 1 },
+    { name: "certifications", maxCount: 5 },
+  ]),
+  (req, res) => {
+    if (!req.session.user || req.session.user.role !== "tutor")
+      return res.status(403).json({ error: "Access denied" });
+
+    const { bio, skills, subjects, availability } = req.body;
+    const tutorId = req.session.user.id;
+
+    const profilePic = req.files["profile_pic"]
+      ? req.files["profile_pic"][0].filename
+      : null;
+
+    const certifications = req.files["certifications"]
+      ? req.files["certifications"].map((file) => file.filename).join(",")
+      : null;
+
+    console.log("📤 Tutor Profile Submission:", {
+      tutorId,
+      bio,
+      skills,
+      subjects,
+      availability,
+      profilePic,
+      certifications,
+    });
+
+    // Check if tutor profile exists
+    const sqlCheck = "SELECT * FROM tutor_profiles WHERE tutor_id = ?";
+    db.query(sqlCheck, [tutorId], (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+
+      // Tutor submitting for first time → notify admin
+      if (results.length === 0) {
+        const sqlInsert =
+          "INSERT INTO tutor_profiles (tutor_id, bio, skills, subjects, availability, profile_pic, certifications, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')";
+        db.query(
+          sqlInsert,
+          [
+            tutorId,
+            bio,
+            skills,
+            subjects,
+            availability,
+            profilePic,
+            certifications,
+          ],
+          (err, result) => {
+            if (err) return res.status(500).json({ error: "DB error" });
+
+            // Notify admin (only on first submission)
+            const notifymsg = `${req.session.user.name} has submitted their profile for approval.`;
+            db.query(
+              "INSERT INTO notifications (user_id, message, status) VALUES (?, ?, 'unread')",
+              [tutorId, notifymsg]
+            );
+
+            sendAdminEmail(req.session.user.name, req.session.user.email);
+
+            res.json({
+              message: "Profile created and submitted for approval.",
+            });
+          }
+        );
+      } else {
+        // Check current status
+        const currentStatus = results[0].status;
+
+        let newStatus = currentStatus;
+        if (currentStatus === "rejected") {
+          newStatus = "pending"; // resend for review
+        }
+
+        const sqlUpdate =
+          "UPDATE tutor_profiles SET bio=?, skills=?, subjects=?, availability=?, profile_pic=?, certifications=?, status=? WHERE tutor_id=?";
+        db.query(
+          sqlUpdate,
+          [
+            bio,
+            skills,
+            subjects,
+            availability,
+            profilePic,
+            certifications,
+            newStatus,
+            tutorId,
+          ],
+          (err, result) => {
+            if (err) return res.status(500).json({ error: "DB error" });
+
+            if (currentStatus === "rejected") {
+              // Notify admin again
+              const notifyMsg = `${req.session.user.name} has resubmitted their profile for approval.`;
+              db.query(
+                "INSERT INTO notifications (user_id, message, status) VALUES (?, ?, 'unread')",
+                [tutorId, notifyMsg]
+              );
+
+              sendAdminEmail(req.session.user.name, req.session.user.email);
+
+              return res.json({
+                message:
+                  "Profile updated and resubmitted for admin approval. Please wait for review.",
+              });
+            } else {
+              return res.json({
+                message: "Profile updated successfully!",
+              });
+            }
+          }
+        );
+      }
+    });
+  }
+);

@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tutor Doubt Requests | TutorConnect</title>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial;
+        background: #f4f6fb;
+        display: flex;
+      }
+
+      .sidebar {
+        width: 230px;
+        background: #0f3057;
+        height: 100vh;
+        color: white;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        color: white;
+        text-decoration: none;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #1f5fa6;
+      }
+
+      .main {
+        margin-left: 230px;
+        padding: 30px;
+        width: 100%;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+      }
+
+      th {
+        background: #2563eb;
+        color: white;
+      }
+
+      button {
+        padding: 6px 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .approve {
+        background: green;
+        color: white;
+      }
+
+      .reject {
+        background: red;
+        color: white;
+      }
+
+      .status-pending {
+        color: orange;
+        font-weight: bold;
+      }
+      .status-approved {
+        color: green;
+        font-weight: bold;
+      }
+      .status-rejected {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_sessions.html">Sessions</a>
+      <a href="completed_sessions.html">Complete Session</a>
+      <a href="tutor_progress.html">Progress</a>
+      <a href="tutor_doubt_requests.html" class="active">Doubt Requests</a>
+      <a href="tutor_profile.html">Profile</a>
+      <a href="tutor_group.html">Group</a>
+      <a href="tutor_logout.html">Logout</a>
+    </div>
+
+    <div class="main">
+      <h2>Doubt Requests</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Learner</th>
+            <th>Subject</th>
+            <th>Message</th>
+            <th>Preferred Time</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="doubtTable"></tbody>
+      </table>
+    </div>
+
+    <script>
+      async function loadDoubts() {
+        const res = await fetch("/api/tutor/doubt-requests", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        const table = document.getElementById("doubtTable");
+        table.innerHTML = "";
+
+        if (!data.length) {
+          table.innerHTML =
+            "<tr><td colspan='6'>No doubt requests found.</td></tr>";
+          return;
+        }
+
+        data.forEach((d) => {
+          table.innerHTML += `
+      <tr>
+        <td>${d.learner_name}</td>
+        <td>${d.subject}</td>
+        <td>${d.message}</td>
+        <td>${new Date(d.preferred_time).toLocaleString()}</td>
+        <td class="status-${d.status}">${d.status}</td>
+        <td>
+          ${
+            d.status === "pending"
+              ? `
+                <button class="approve" onclick="approve(${d.request_id})">Approve</button>
+                <button class="reject" onclick="reject(${d.request_id})">Reject</button>
+              `
+              : "-"
+          }
+        </td>
+      </tr>
+    `;
+        });
+      }
+
+      async function approve(id) {
+        await fetch(`/api/tutor/doubt-requests/${id}/approve`, {
+          method: "POST",
+          credentials: "include",
+        });
+
+        loadDoubts();
+      }
+
+      async function reject(id) {
+        await fetch(`/api/tutor/doubt-requests/${id}/reject`, {
+          method: "POST",
+          credentials: "include",
+        });
+
+        loadDoubts();
+      }
+
+      loadDoubts();
+    </script>
+  </body>
+</html>

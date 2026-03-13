@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Session Attendance | TutorConnect</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f4f6fb;
+        display: flex;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 230px;
+        background: #0f3057;
+        height: 100vh;
+        color: white;
+        padding-top: 20px;
+        position: fixed;
+      }
+
+      .sidebar h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .sidebar a {
+        display: block;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: white;
+        transition: 0.3s;
+      }
+
+      .sidebar a:hover,
+      .sidebar a.active {
+        background: #1f5fa6;
+        border-radius: 6px;
+      }
+
+      /* Main Content */
+      .main {
+        margin-left: 230px;
+        padding: 40px;
+        width: 100%;
+      }
+
+      h1 {
+        text-align: center;
+        color: #2563eb;
+        margin-bottom: 30px;
+      }
+
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+      }
+
+      th {
+        background: #2563eb;
+        color: white;
+      }
+
+      .present {
+        color: green;
+        font-weight: bold;
+      }
+
+      .absent {
+        color: red;
+        font-weight: bold;
+      }
+
+      .late {
+        color: orange;
+        font-weight: bold;
+      }
+
+      .summary {
+        margin-top: 20px;
+        text-align: right;
+        font-weight: bold;
+      }
+
+      .message {
+        text-align: center;
+        padding: 20px;
+        font-weight: bold;
+        color: red;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        font-weight: bold;
+        color: #2563eb;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="sidebar">
+      <h2>TutorConnect</h2>
+      <a href="tutor_dashboard.html">Dashboard</a>
+      <a href="tutor_sessions.html" class="active">Sessions</a>
+      <a href="completed_sessions.html">Complete Session</a>
+      <a href="tutor_profile.html">Profile</a>
+      <a href="tutor_group.html">Groups</a>
+      <a href="tutor_doubt_requests.html">Doubt Request</a>
+      <a href="tutor_logout.html">Logout</a>
+    </div>
+
+    <div class="main">
+      <h1>Session Attendance</h1>
+
+      <div class="card">
+        <div id="statusMessage" class="loading">Loading attendance...</div>
+
+        <table id="attendanceTable" style="display: none">
+          <thead>
+            <tr>
+              <th>Learner Name</th>
+              <th>Status</th>
+              <th>Marked At</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+
+        <div class="summary" id="summaryBox"></div>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+
+      const statusMessage = document.getElementById("statusMessage");
+      const table = document.getElementById("attendanceTable");
+      const tableBody = document.getElementById("tableBody");
+      const summaryBox = document.getElementById("summaryBox");
+
+      if (!sessionId) {
+        statusMessage.innerHTML =
+          "Invalid Session ID. Please open from Tutor Sessions page.";
+        statusMessage.className = "message";
+      } else {
+        loadAttendance();
+      }
+
+      async function loadAttendance() {
+        try {
+          const res = await fetch(
+            `/api/tutor/session/${sessionId}/attendance`,
+            {
+              credentials: "include",
+            },
+          );
+
+          if (!res.ok) {
+            throw new Error("Failed to load attendance");
+          }
+
+          const data = await res.json();
+
+          statusMessage.style.display = "none";
+          table.style.display = "table";
+
+          let present = 0;
+          let absent = 0;
+          let late = 0;
+
+          if (data.length === 0) {
+            tableBody.innerHTML = `
+          <tr>
+            <td colspan="3">No learners found.</td>
+          </tr>
+        `;
+            return;
+          }
+
+          data.forEach((row) => {
+            if (row.attendance_status === "present") present++;
+            if (row.attendance_status === "absent") absent++;
+            if (row.attendance_status === "late") late++;
+
+            tableBody.innerHTML += `
+          <tr>
+            <td>${row.learner_name}</td>
+            <td class="${row.attendance_status}">
+              ${row.attendance_status.toUpperCase()}
+            </td>
+            <td>
+              ${row.marked_at ? new Date(row.marked_at).toLocaleString() : "-"}
+            </td>
+          </tr>
+        `;
+          });
+
+          summaryBox.innerHTML = `
+        Present: ${present} | 
+        Late: ${late} | 
+        Absent: ${absent}
+      `;
+        } catch (error) {
+          statusMessage.innerHTML = "Error loading attendance.";
+          statusMessage.className = "message";
+          console.error(error);
+        }
+      }
+    </script>
+  </body>
+</html>

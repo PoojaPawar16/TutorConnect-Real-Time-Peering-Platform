@@ -1,0 +1,93 @@
+/* Layout */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+}
+
+.sidebar {
+  width: 240px;
+  background: #2c3e50;
+  color: white;
+  height: 100vh;
+  padding: 20px;
+  position: fixed;
+}
+
+.sidebar .logo {
+  margin: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #34495e;
+}
+
+.sidebar nav a {
+  display: block;
+  color: white;
+  padding: 12px;
+  margin: 8px 0;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  background: #1abc9c;
+}
+
+.sidebar nav a.logout {
+  margin-top: 40px;
+  background: #e74c3c;
+}
+
+.content {
+  margin-left: 260px;
+  padding: 20px;
+  flex: 1;
+}
+
+header {
+  background: #ecf0f1;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.cards {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.card {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #1abc9c;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: #16a085;
+}
+
+.notifications {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
