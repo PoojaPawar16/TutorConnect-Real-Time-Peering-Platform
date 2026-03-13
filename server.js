@@ -10,7 +10,6 @@ const { log, error } = require("console");
 const { getAuthUrl, authorize, createGoogleMeet } = require("./googleAuth");
 
 const app = express();
-// const PORT = 3000;
 const PORT = process.env.PORT || 3000;
 
 // console.log(process.env.OPENROUTER_API_KEY);
@@ -20,6 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 
 const aiRoutes = require("./routes/aiRoutes");
 app.use("/api/ai", aiRoutes);
+
+const fs = require("fs");
+
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -505,13 +510,15 @@ app.post(
     const { bio, skills, subjects, availability } = req.body;
     const tutorId = req.session.user.id;
 
-    const profilePic = req.files["profile_pic"]
-      ? req.files["profile_pic"][0].filename
-      : null;
+    const profilePic =
+      req.files && req.files["profile_pic"]
+        ? req.files["profile_pic"][0].filename
+        : null;
 
-    const certifications = req.files["certifications"]
-      ? req.files["certifications"].map((file) => file.filename).join(",")
-      : null;
+    const certifications =
+      req.files && req.files["certifications"]
+        ? req.files["certifications"].map((file) => file.filename).join(",")
+        : null;
 
     console.log("📤 Tutor Profile Submission:", {
       tutorId,
@@ -570,7 +577,7 @@ app.post(
         }
 
         const sqlUpdate =
-          "UPDATE tutor_profiles SET bio=?, skills=?, subjects=?, availability=?, profile_pic=?, certifications=?, status=? WHERE tutor_id=?";
+          "UPDATE tutor_profiles SET bio=?, skills=?, subjects=?, availability=?, profile_pic=IFNULL(?,profile_pic), certifications=IFNULL(?,certifications), status=? WHERE tutor_id=?";
         db.query(
           sqlUpdate,
           [
@@ -584,7 +591,10 @@ app.post(
             tutorId,
           ],
           (err, result) => {
-            if (err) return res.status(500).json({ error: "DB error" });
+            if (err) {
+              console.error("Tutor profile DB error:", err);
+              return res.status(500).json({ error: "DB error" });
+            }
 
             if (currentStatus === "rejected") {
               // Notify admin again
